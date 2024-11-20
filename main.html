@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TensorFlow.js Image Recognition</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        input[type="file"] {
+            margin: 10px 0;
+            padding: 10px;
+            font-size: 16px;
+        }
+
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        #video {
+            margin: 20px 0;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+        }
+
+        #previewImage {
+            margin: 20px 0;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+        }
+
+        #prediction {
+            font-size: 18px;
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+
+<body>
+    <h1>TensorFlow.js Image Recognition</h1>
+    <input type="file" id="imageInput" accept="image/*">
+    <button id="classifyImageButton">Classify Image</button>
+    <button id="classifyVideoButton">Classify Video</button>
+    <video id="video" width="640" height="300" autoplay></video>
+    <img id="previewImage" style="max-width: 300px; display: none;"><br><br>
+    <span id="prediction"></span>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet"></script>
+    <script>
+        let model;
+        const imageInput = document.getElementById('imageInput');
+        const classifyImageButton = document.getElementById('classifyImageButton');
+        const classifyVideoButton = document.getElementById('classifyVideoButton');
+        const previewImage = document.getElementById('previewImage');
+        const videoElement = document.getElementById('video');
+        const predictionSpan = document.getElementById('prediction');
+
+        async function loadModel() {
+            model = await mobilenet.load();
+            console.log("Model Loaded!");
+        }
+
+        loadModel();
+
+        classifyImageButton.addEventListener('click', () => {
+            const file = imageInput.files[0];
+            if (!file) {
+                alert('Please select an image');
+                return;
+            }
+            previewImage.src = URL.createObjectURL(file);
+            previewImage.style.display = 'block';
+
+            previewImage.onload = async () => {
+                const predictions = await model.classify(previewImage);
+                predictionSpan.innerText = `Prediction: ${predictions[0].className}, Confidence: ${predictions[0].probability.toFixed(2)}`;
+            };
+        });
+
+        classifyVideoButton.addEventListener('click', () => {
+            videoPrediction();
+        });
+
+        async function videoPrediction() {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            videoElement.srcObject = stream;
+
+            setInterval(async () => {
+                const predictions = await model.classify(videoElement);
+                predictionSpan.innerText = `Prediction: ${predictions[0].className}, Confidence: ${predictions[0].probability.toFixed(2)}`;
+            }, 1000);
+        }
+    </script>
+</body>
+
+</html>
+
